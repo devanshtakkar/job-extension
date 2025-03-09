@@ -44,20 +44,13 @@ if (jobsElement) {
 
 console.log(jobsElement);
 
-// Find elements containing "sign in" text
-const findElementsWithText = (searchText: string) => {
+// Find elements containing "sign in" text and return true if any are found
+const findElementsWithText = (searchText: string): boolean => {
     const xpath = `//*[contains(translate(text(),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'${searchText.toLowerCase()}')]`;
     const elements = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-    
-    for (let i = 0; i < elements.snapshotLength; i++) {
-        const element = elements.snapshotItem(i) as HTMLElement;
-        console.log('Found element with "sign in":', {
-            element,
-            tagName: element.tagName,
-            text: element.textContent,
-            className: element.className
-        });
-    }
+    return elements.snapshotLength > 0;
 };
 
-findElementsWithText('sign in');
+// Check if user needs to sign in and send message to background script
+const isSignInRequired = findElementsWithText('sign in');
+chrome.runtime.sendMessage({ type: 'SIGN_IN_STATUS', requiresSignIn: isSignInRequired });
