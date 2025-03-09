@@ -3,8 +3,36 @@ import { useEffect, useState } from 'react';
 export default function App() {
     const [currentUrl, setCurrentUrl] = useState<string>('');
     const [requiresSignIn, setRequiresSignIn] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Listen for script completion from background script
+    useEffect(() => {
+        const handleMessage = (
+            message: any,
+            _sender: chrome.runtime.MessageSender,
+            _sendResponse: () => void
+        ) => {
+            if (message.type === 'SCRIPT_COMPLETE') {
+                setIsLoading(false);
+                // Clear the completion status
+                chrome.storage.local.remove('scriptComplete');
+            }
+            return false; // Required to indicate we're not using sendResponse
+        };
+        
+        chrome.runtime.onMessage.addListener(handleMessage);
+        return () => chrome.runtime.onMessage.removeListener(handleMessage);
+    }, []);
 
     useEffect(() => {
+        // Check if script is already complete when popup opens
+        chrome.storage.local.get('scriptComplete', (result) => {
+            if (result.scriptComplete) {
+                setIsLoading(false);
+                chrome.storage.local.remove('scriptComplete');
+            }
+        });
+
         // Get current tab info when component mounts
         chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
             const tab = tabs[0];
@@ -45,8 +73,26 @@ export default function App() {
                     <h1 className="text-xl font-semibold text-gray-800">
                         Ready to apply?
                     </h1>
-                    <button className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                        Start Application
+                    <button 
+                        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        onClick={async () => {
+                            setIsLoading(true);
+                            const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+                            const tab = tabs[0];
+                            if (tab.id) {
+                                chrome.tabs.sendMessage(tab.id, { type: 'START_SCRIPT' });
+                            }
+                        }}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Processing...
+                            </div>
+                        ) : (
+                            'Start Application'
+                        )}
                     </button>
                 </div>
             ) : (
