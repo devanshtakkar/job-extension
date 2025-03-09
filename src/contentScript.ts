@@ -43,3 +43,21 @@ if (jobsElement) {
 }
 
 console.log(jobsElement);
+
+// Find elements containing "sign in" text
+const findElementsWithText = (searchText: string) => {
+    const xpath = `//*[contains(translate(text(),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'${searchText.toLowerCase()}')]`;
+    const elements = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    
+    for (let i = 0; i < elements.snapshotLength; i++) {
+        const element = elements.snapshotItem(i) as HTMLElement;
+        console.log('Found element with "sign in":', {
+            element,
+            tagName: element.tagName,
+            text: element.textContent,
+            className: element.className
+        });
+    }
+};
+
+findElementsWithText('sign in');
