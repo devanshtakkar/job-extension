@@ -43,8 +43,26 @@ document.addEventListener('focusin', (event) => {
 
 // Find elements containing "sign in" text and return true if any are found
 const findElementsWithText = (searchText: string): boolean => {
-    const xpath = `//*[contains(translate(text(),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'${searchText.toLowerCase()}')]`;
+    const xpath = `//*[not(self::script) and contains(translate(text(),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'${searchText.toLowerCase()}')]`;
     const elements = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    
+    console.log('XPath query:', xpath);
+    console.log('Number of matching elements:', elements.snapshotLength);
+    
+    // Log details of each matching element
+    for (let i = 0; i < elements.snapshotLength; i++) {
+        const element = elements.snapshotItem(i) as Element;
+        console.log('Matching element', i + 1, ':', {
+            tagName: element.tagName,
+            textContent: element.textContent?.trim(),
+            innerHTML: element.innerHTML,
+            attributes: Array.from(element.attributes).map(attr => ({
+                name: attr.name,
+                value: attr.value
+            }))
+        });
+    }
+    
     return elements.snapshotLength > 0;
 };
 
