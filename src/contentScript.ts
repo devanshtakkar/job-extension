@@ -18,8 +18,42 @@ const processJobListings = async () => {
     
     console.log(`Found ${filteredJobs.length} Easy Apply job listings`);
 
+    // Function to wait for network and DOM to be idle
+    const waitForNetworkIdle = () => new Promise<void>(resolve => {
+        let timeout: NodeJS.Timeout;
+        let mutationCount = 0;
+        
+        // Create mutation observer to track DOM changes
+        const observer = new MutationObserver(() => {
+            mutationCount++;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                // If no mutations for 1 second, consider network idle
+                if (mutationCount > 0) {
+                    console.log(`Network appears idle after ${mutationCount} mutations`);
+                    observer.disconnect();
+                    resolve();
+                }
+            }, 1000);
+        });
+
+        // Start observing DOM changes
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true
+        });
+
+        // Also set a maximum wait time of 5 seconds
+        setTimeout(() => {
+            observer.disconnect();
+            console.log('Maximum wait time reached');
+            resolve();
+        }, 5000);
+    });
+
     // Test with single element (first Easy Apply job)
-    const jobLink = filteredJobs[2]?.querySelector('a') as HTMLElement;
+    const jobLink = filteredJobs[0]?.querySelector('a') as HTMLElement;
     if (jobLink) {
         // Get element's position
         const rect = jobLink.getBoundingClientRect();
@@ -33,6 +67,11 @@ const processJobListings = async () => {
         });
         jobLink.dispatchEvent(clickEvent);
         console.log('Clicking job link pseudo-element:', jobLink);
+        
+        // Wait for network to be idle
+        console.log('Waiting for network to be idle...');
+        await waitForNetworkIdle();
+        console.log('Network is now idle');
     }
     
     // Notify background script that processing is complete
