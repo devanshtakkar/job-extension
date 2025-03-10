@@ -9,19 +9,30 @@ const processJobListings = async () => {
     }
 
     const jobListItems = jobsElement.querySelectorAll('li');
+    // Only process Indeed Easy Apply jobs (jobs that have the Indeed Apply button)
     const filteredJobs = Array.from(jobListItems)
-        .filter(item => item.querySelector('div.result') !== null);
+        .filter(item => 
+            item.querySelector('div.result') !== null && 
+            item.querySelector('span[data-testid="indeedApply"]') !== null
+        );
     
-    console.log(`Found ${filteredJobs.length} job listings`);
+    console.log(`Found ${filteredJobs.length} Easy Apply job listings`);
 
-    for (const job of filteredJobs) {
-        const jobLink = job.querySelector('a');
-        if (jobLink) {
-            jobLink.focus();
-            console.log('Focusing job link:', jobLink);
-            // Small delay to ensure proper focus handling
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
+    // Test with single element (first Easy Apply job)
+    const jobLink = filteredJobs[2]?.querySelector('a') as HTMLElement;
+    if (jobLink) {
+        // Get element's position
+        const rect = jobLink.getBoundingClientRect();
+        // Create click event at the right edge of the anchor (where ::after usually is)
+        const clickEvent = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true,
+            clientX: rect.right - 5, // 5px from right edge
+            clientY: rect.top + (rect.height / 2) // Vertically centered
+        });
+        jobLink.dispatchEvent(clickEvent);
+        console.log('Clicking job link pseudo-element:', jobLink);
     }
     
     // Notify background script that processing is complete
